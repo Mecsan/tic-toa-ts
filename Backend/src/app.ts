@@ -1,6 +1,5 @@
 import { config } from 'dotenv';
 config();
-import "./config/redis"
 import express from 'express';
 import path from 'path';
 import roomRouter from './routes/room';

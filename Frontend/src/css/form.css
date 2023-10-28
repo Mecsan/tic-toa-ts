@@ -1,0 +1,93 @@
+.mainform {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(to right, #0c0032, rgba(58, 4, 83, 0.981), rgb(94, 11, 36));
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.online>button,
+.offline>button {
+    padding: 1px 10px;
+    font-size: 1.5rem;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.478);
+    text-shadow: 1px 1px 20px black;
+    letter-spacing: 10px;
+    background: transparent;
+    border: 2px rgba(255, 255, 255, 0.482) solid;
+    margin: 20px;
+
+}
+
+.online>button:hover,
+.offline>button:hover {
+    color: rgb(255, 255, 255);
+    text-shadow: 0px 0px 10px white;
+    box-shadow: 0px 0px 100px white;
+    transform: scale(1.01);
+
+}
+
+.onlineform {
+    display: flex;
+    flex-direction: column;
+}
+
+input {
+    font-size: 1.1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid grey;
+
+    color: white;
+    margin: 10px 0px;
+
+}
+
+input:focus {
+    outline: none;
+}
+
+label {
+    color: rgba(255, 255, 255, 0.628);
+    width: 100%;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.submit {
+    padding: 10px 10px;
+    width: 100%;
+    background-color: rgb(205, 50, 50);
+    border: none;
+    font-size: 1.3rem;
+    font-size: 1.1rem;
+    opacity: 0.5;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button.submit {
+    background-color: blueviolet;
+    color: white;
+}
+
+.submit:hover {
+    opacity: 1;
+}
+
+input[type="text"] {
+    padding: 7px 0px;
+    margin-left: 10px;
+}
+
+.flex{
+    display: flex;
+    gap: 20px;
+}

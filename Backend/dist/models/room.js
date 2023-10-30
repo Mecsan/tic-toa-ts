@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rooms = exports.getDb = exports.Room = exports.initTurn = exports.initBoard = void 0;
+exports.Room = exports.initTurn = exports.initBoard = void 0;
 exports.initBoard = ["", "", "", "", "", "", "", "", ""];
 exports.initTurn = 'O';
 class Room {
@@ -10,6 +10,30 @@ class Room {
         this.board = exports.initBoard;
         this.status = "initial";
         this.turn = exports.initTurn;
+    }
+    static parse(obj) {
+        let ret = Object.create(Room.prototype);
+        for (let key in obj) {
+            try {
+                ret[key] = JSON.parse(obj[key]);
+            }
+            catch (e) {
+                ret[key] = obj[key];
+            }
+        }
+        return ret;
+    }
+    stringify() {
+        let ret = Object.create({});
+        for (let key in this) {
+            if (typeof this[key] == 'object') {
+                ret[key] = JSON.stringify(this[key]);
+            }
+            else {
+                ret[key] = this[key];
+            }
+        }
+        return ret;
     }
     join(player) {
         let f = this.players.find(p => p.name === player);
@@ -25,37 +49,8 @@ class Room {
             }
         }
     }
-    leave(player) {
-        this.players = this.players.filter(p => p.name !== player.name);
-    }
     getPlayer(name) {
         return this.players.find(p => p.name === name);
     }
 }
 exports.Room = Room;
-class Rooms {
-    constructor() {
-        this.rooms = [];
-    }
-    addRoom(room) {
-        this.rooms.push(room);
-    }
-    getRoom(name) {
-        return this.rooms.find(room => room.name === name);
-    }
-    getRooms() {
-        return this.rooms;
-    }
-}
-let rooms = new Rooms();
-exports.rooms = rooms;
-const getDb = (req, res) => {
-    let query = req.query.token;
-    if (query && query == process.env.DB_TOKEN) {
-        return res.json(rooms);
-    }
-    return res.json({
-        msg: "unauthorized"
-    });
-};
-exports.getDb = getDb;

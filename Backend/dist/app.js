@@ -9,11 +9,9 @@ const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const room_1 = __importDefault(require("./routes/room"));
 const socket_1 = require("./socket");
-const room_2 = require("./models/room");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use("/api/room", room_1.default);
-app.get("/api/db", room_2.getDb);
 if (process.env.NODE_ENV == 'production') {
     let staticPath = path_1.default.join(__dirname, '..', '..', 'Frontend', 'dist');
     app.use(express_1.default.static(staticPath));

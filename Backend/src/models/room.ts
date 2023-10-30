@@ -1,11 +1,8 @@
-import { Request, Response } from "express";
-
 export type Choice = 'X' | 'O' | '';
 export type board = [Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice];
 
 export let initBoard: board = ["", "", "", "", "", "", "", "", ""]
 export let initTurn: Choice = 'O'
-
 
 export type gameStatus = "initial" | "playing" | "finished";
 
@@ -30,12 +27,37 @@ export class Room implements room {
     status: gameStatus;
     turn: Choice;
 
+
     constructor(name: string) {
         this.name = name;
         this.players = [];
         this.board = initBoard;
         this.status = "initial";
         this.turn = initTurn;
+    }
+
+    static parse(obj: any): Room {
+        let ret = Object.create(Room.prototype);
+        for (let key in obj) {
+            try {
+                ret[key] = JSON.parse(obj[key]);
+            } catch (e) {
+                ret[key] = obj[key]
+            }
+        }
+        return ret;
+    }
+
+    stringify() {
+        let ret = Object.create({});
+        for (let key in this) {
+            if (typeof this[key] == 'object') {
+                ret[key] = JSON.stringify(this[key]);
+            } else {
+                ret[key] = this[key]
+            }
+        }
+        return ret;
     }
 
     join(player: string) {
@@ -52,46 +74,10 @@ export class Room implements room {
         }
     }
 
-    leave(player: player) {
-        this.players = this.players.filter(p => p.name !== player.name);
-    }
-
     getPlayer(name: string) {
         return this.players.find(p => p.name === name);
     }
 }
 
 
-class Rooms {
-    rooms: Room[];
-    constructor() {
-        this.rooms = [];
-    }
-
-    addRoom(room: Room) {
-        this.rooms.push(room);
-    }
-
-    getRoom(name: string) {
-        return this.rooms.find(room => room.name === name);
-    }
-
-    getRooms() {
-        return this.rooms;
-    }
-}
-
-let rooms = new Rooms();
-
-
-export const getDb = (req: Request, res: Response) => {
-    let query = req.query.token;
-    if (query && query == process.env.DB_TOKEN) {
-        return res.json(rooms);
-    }
-    return res.json({
-        msg: "unauthorized"
-    })
-}
-export { rooms };
 

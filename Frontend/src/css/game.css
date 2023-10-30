@@ -251,7 +251,6 @@ select {
         width: 100%;
         flex-direction: row;
         flex-wrap: wrap;
-
     }
 
     .again {
@@ -339,7 +338,19 @@ select {
     }
 }
 
-.player.offline{
+.player.offline {
     /* background-color: blue; */
     opacity: 0.5;
+}
+
+
+.loading {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: 2rem;
+    width: 100vw;
+    /* background: linear-gradient(to left, #0c0032, rgba(58, 4, 83, 0.981), rgb(94, 11, 36)); */
 }

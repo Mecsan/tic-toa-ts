@@ -5,6 +5,7 @@ import { Choice, board, Player as player } from '../common/types';
 import Select from '../components/select';
 import Board from '../components/board';
 import { Socket, io } from 'socket.io-client';
+import "../css/game.css"
 
 type gameStatus = "initial" | "playing" | "finished";
 
@@ -19,11 +20,6 @@ interface gameState {
     status: gameStatus,
 }
 
-let baseUrl = "http://localhost:2000/";
-if (import.meta.env.MODE == 'production') {
-    baseUrl = "/";
-}
-
 function Online(): React.JSX.Element {
     let { room } = useParams();
     let name = localStorage.getItem("tictoken");
@@ -35,7 +31,7 @@ function Online(): React.JSX.Element {
     let [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
-        const socket = io(baseUrl,
+        const socket = io(
             {
                 transports: ["websocket"],
                 auth: {
@@ -59,12 +55,21 @@ function Online(): React.JSX.Element {
     let [winner, setWinner] = useState<Choice | null>(null);
 
     useEffect(() => {
-        if (socket) {
+        const playerJoined = (data: player) => {
+            if (data.name == player1?.name) return;
+            setplayer2(data);
+        };
 
-            const playerJoined = (data: player) => {
-                if (data.name == player1?.name) return;
-                setplayer2(data);
-            };
+        socket?.on('joined', playerJoined);
+
+        return () => {
+            socket?.off('joined', playerJoined);
+        }
+
+    }, [player1])
+
+    useEffect(() => {
+        if (socket) {
 
             const moved = (data: { board: board, turn: Choice }) => {
                 setboard(data.board);
@@ -82,7 +87,10 @@ function Online(): React.JSX.Element {
                 setWinner(null);
             }
 
-            const selected = ({ player1, player2 }: { player1: player, player2: player }) => {
+            const selected = (players: player[]) => {
+                let player1 = players[0];
+                let player2 = players[1];
+                
                 if (player1.name == name) {
                     setplayer1(player1);
                     setplayer2(player2);
@@ -134,7 +142,6 @@ function Online(): React.JSX.Element {
 
             socket.on('roomData', roomData);
 
-            socket.on('joined', playerJoined);
 
             socket.on('selected', selected);
 
@@ -147,7 +154,6 @@ function Online(): React.JSX.Element {
             socket.on('connect_error', handleError);
 
             return () => {
-                socket?.off('joined', playerJoined);
                 socket?.off('selected', selected);
                 socket?.off('moved', moved);
                 socket?.off('started', started);
@@ -175,9 +181,9 @@ function Online(): React.JSX.Element {
         }
 
         setplayer1(p1);
-        setplayer2(p2);
+        if (player2) setplayer2(p2);
 
-        socket?.emit('select', { player1: p1, player2: p2 })
+        socket?.emit('select', player2 ? [p1, p2] : [p1])
     }
 
     //@ts-ignore
@@ -257,65 +263,83 @@ function Online(): React.JSX.Element {
         }
     }, [board]);
 
+    if (loading) {
+        return <div className="loading">Loading...</div>
+    }
+
     return (
         <div className="game">
-            {loading ? <div className="loading">Loading...</div> :
-                <div>
-                    <div className="lhs">
+            <div>
+                <div className="lhs">
 
-                        <Select
-                            disabled={status !== 'initial' || !player1 || !player2}
-                            player1={player1}
-                            player2={player2}
-                            handleSelectChange={handleSelectChange}
-                        />
+                    <div className="selmain">
+                        <div className="selection">
 
-                        {
-                            status == 'initial' &&
-                            <div className='btn' onClick={start}>Start game</div>
-                        }
+                            <div className="players">
 
+                                <Select
+                                    lable='player1'
+                                    disabled={status !== 'initial' || name !== player1?.name}
+                                    player={player1}
+                                    handleSelectChange={handleSelectChange}
+                                />
 
-                        {
-                            status == 'playing' &&
-                            <>
-                                <div className='btn' onClick={reStart}>Re-start game</div>
-                                <div className="msg">
-                                    {
-                                        // @ts-ignore
-                                        turn == player1.choice ? `${player1.name}'s turn` : `${player2.name}'s turn`
-                                    }
-                                </div>
-                            </>
-                        }
+                                <Select
+                                    lable='player2'
+                                    disabled={status !== 'initial' || name !== player2?.name}
+                                    player={player2}
+                                    handleSelectChange={handleSelectChange}
+                                />
 
-                        {status == 'finished' ?
-                            winner != null ?
-                                <div className="winnermsg">{getWinner(winner)} won</div>
-                                :
-                                <div className="msg">game drawn</div>
-                            : null
-                        }
-
-                        {
-                            status == "finished"
-                            &&
-                            <div className='btn' onClick={reStart}>Play again</div>
-                        }
-
-
-                        <div></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="rhs">
-                        <Board
-                            handleChange={handleBoardChange}
-                            board={board}
-                        />
-                    </div>
+                    {
+                        status == 'initial' &&
+                        <div className='btn' onClick={start}>Start game</div>
+                    }
 
+
+                    {
+                        status == 'playing' &&
+                        <>
+                            <div className='btn' onClick={reStart}>Re-start game</div>
+                            <div className="msg">
+                                {
+                                    // @ts-ignore
+                                    turn == player1.choice ? `${player1.name}'s turn` : `${player2.name}'s turn`
+                                }
+                            </div>
+                        </>
+                    }
+
+                    {status == 'finished' ?
+                        winner != null ?
+                            <div className="winnermsg">{getWinner(winner)} won</div>
+                            :
+                            <div className="msg">game drawn</div>
+                        : null
+                    }
+
+                    {
+                        status == "finished"
+                        &&
+                        <div className='btn' onClick={reStart}>Play again</div>
+                    }
+
+
+                    <div></div>
                 </div>
-            }
+
+                <div className="rhs">
+                    <Board
+                        handleChange={handleBoardChange}
+                        board={board}
+                    />
+                </div>
+
+            </div>
         </div>
     )
 }

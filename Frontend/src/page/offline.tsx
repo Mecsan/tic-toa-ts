@@ -49,7 +49,7 @@ function Offline(): React.JSX.Element {
             setplayer1((prev) => ({ ...prev, choice: curr == 'X' ? 'O' : 'X' }));
         }
     }
-    
+
     //@ts-ignore
     function handleBoardChange(e: React.MouseEvent<HTMLDivElement>, idx: number): void {
         if (status == 'initial' || status == 'finished') return;
@@ -120,12 +120,29 @@ function Offline(): React.JSX.Element {
 
                 <div className="lhs">
 
-                    <Select
-                        disabled={status !== 'initial'}
-                        player1={player1}
-                        player2={player2}
-                        handleSelectChange={handleSelectChange}
-                    />
+                    <div className="selmain">
+                        <div className="selection">
+
+                            <div className="players">
+
+                                <Select
+                                    disabled={status != 'initial'}
+                                    lable='player1'
+                                    player={player1}
+                                    handleSelectChange={handleSelectChange}
+                                />
+
+                                <Select
+                                    disabled={status != 'initial'}
+                                    lable='player2'
+                                    player={player2}
+                                    handleSelectChange={handleSelectChange}
+                                />
+
+                            </div>
+                        </div>
+                    </div>
+
 
                     {
                         status == 'initial' &&

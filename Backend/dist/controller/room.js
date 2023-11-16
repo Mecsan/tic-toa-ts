@@ -38,18 +38,19 @@ const room_1 = require("../models/room");
 const createRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let { userName, roomName } = req.body;
     try {
-        let exist = yield redis_1.default.exists((0, redis_1.Key)("rooms", roomName));
+        let key = (0, redis_1.roomKey)(roomName);
+        let exist = yield redis_1.default.exists(key);
         if (exist) {
             throw new Error("Room already exists");
         }
         let room = new room_1.Room(roomName);
-        room.join(userName);
-        let key = (0, redis_1.Key)("rooms", room.name);
         yield redis_1.default.hset(key, room.stringify());
         yield redis_1.default.expire(key, redis_1.roomExpire);
+        yield room.join(userName);
         res.json({ room: room.name });
     }
     catch (e) {
+        console.log(e);
         res.status(400).json({ error: e.message });
     }
 });
@@ -57,18 +58,19 @@ exports.createRoom = createRoom;
 const joinRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     let { userName, roomName } = req.body;
     try {
-        let key = (0, redis_1.Key)("rooms", roomName);
-        let exist = yield redis_1.default.hgetall(key);
-        if (Object.keys(exist).length == 0) {
+        let key = (0, redis_1.roomKey)(roomName);
+        let exist = yield redis_1.default.exists(key);
+        if (!exist) {
             throw new Error("Room not found");
         }
-        let room = room_1.Room.parse(exist);
-        room.join(userName);
-        yield redis_1.default.hset(key, "players", JSON.stringify(room.players));
+        let room = Object.create(room_1.Room.prototype);
+        room.name = roomName;
+        yield room.join(userName);
         yield redis_1.default.expire(key, redis_1.roomExpire);
-        res.json({ room: room.name });
+        res.json({ room: roomName });
     }
     catch (e) {
+        console.log(e);
         res.status(400).json({ error: e.message });
     }
 });

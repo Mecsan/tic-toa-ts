@@ -1,8 +1,9 @@
 import { Server } from 'http';
-import { Server as SocketServer, Socket } from 'socket.io';
-import redis, { Key, roomExpire } from './config/redis';
+import { Server as SocketServer } from 'socket.io';
+import redis, { playerKey, playersKey, roomExpire, roomKey } from './config/redis';
 import { roomAuth } from './middleware/roomAuth';
-import { board, Choice, initBoard, initTurn, player, Room } from './models/room';
+import { player } from './models/player';
+import { board, Choice, initBoard, initTurn, Room } from './models/room';
 
 
 export function socketSetup(server: Server) {
@@ -15,25 +16,36 @@ export function socketSetup(server: Server) {
     io.on('connection', async (socket) => {
         console.log("connected " + socket.id);
 
-        let key = Key("rooms", socket.data.room);
+        let playerkey = playerKey(socket.data.room, socket.data.name);
 
+        await redis.hset(playerkey, "isOnline", 1);
+        await redis.hincrby(playerkey, "cn", 1);
+
+        let key = roomKey(socket.data.room);
+        
         let get = await redis.hgetall(key);
+        await redis.expire(key, roomExpire);
         let room: Room = Room.parse(get);
 
-        let player = room.getPlayer(socket.data.name);
-        if (player) {
-            player.cn++;
-            player.isOnline = true;
-        }
-        await redis.hset(key, "players", JSON.stringify(room.players));
-        await redis.expire(key, roomExpire);
+        let playerskey = playersKey(socket.data.room);
+        let playersIds = await redis.lrange(playerskey, 0, -1);
+
+        //@ts-ignore
+        let players: Array<player> = await Promise.all(playersIds.map(async (playerId) => {
+            let playerkey = playerKey(room.name, playerId);
+            return redis.hgetall(playerkey);
+        }))
 
         socket.join(socket.data.room);
-        socket.emit('roomData', room);
-        socket.broadcast.to(socket.data.room).emit('joined', player);
+        socket.emit('roomData', { ...room, players: players });
+
+        socket.broadcast.to(socket.data.room).emit('joined', socket.data.name);
 
         socket.on('select', async (players) => {
-            await redis.hset(key, "players", JSON.stringify(players));
+            for (let player of players) {
+                let key = playerKey(socket.data.room, player.name);
+                await redis.hset(key, "choice", player.choice);
+            }
             await redis.expire(key, roomExpire);
             socket.broadcast.to(socket.data.room).emit('selected', players);
         })
@@ -59,21 +71,12 @@ export function socketSetup(server: Server) {
         socket.on('disconnect', async () => {
             console.log("disconnected " + socket.id);
 
-            let get = await redis.hget(key, "players");
-            if (get) {
-                let players: player[] = JSON.parse(get);
-                let dummy = {
-                    players: players
-                }
-                let player = room.getPlayer.call(dummy, socket.data.name);
-                if (player) {
-                    player.cn--;
-                    if (player.cn == 0) {
-                        player.isOnline = false;
-                        socket.broadcast.to(socket.data.room).emit('disconnected', player);
-                    }
-                    await redis.hset(key, "players", JSON.stringify(dummy.players));
-                }
+            await redis.hincrby(playerkey, "cn", -1);
+            let cn = await redis.hget(playerkey, "cn");
+
+            if (cn === "0") {
+                await redis.hset(playerkey, "isOnline", 0);
+                socket.broadcast.to(socket.data.room).emit('disconnected', socket.data.name);
             }
         })
     })

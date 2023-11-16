@@ -9,6 +9,7 @@ const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const room_1 = __importDefault(require("./routes/room"));
 const socket_1 = require("./socket");
+require("./config/redis.key-event");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use("/api/room", room_1.default);

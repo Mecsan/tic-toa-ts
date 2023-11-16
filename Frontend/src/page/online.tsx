@@ -55,9 +55,15 @@ function Online(): React.JSX.Element {
     let [winner, setWinner] = useState<Choice | null>(null);
 
     useEffect(() => {
-        const playerJoined = (data: player) => {
-            if (data.name == player1?.name) return;
-            setplayer2(data);
+        const playerJoined = (data: string) => {
+            if (data == player1?.name) return;
+            setplayer2(
+                {
+                    choice: player1?.choice == 'O' ? 'X' : 'O',
+                    name: data,
+                    isOnline: true
+                }
+            );
         };
 
         socket?.on('joined', playerJoined);
@@ -90,7 +96,12 @@ function Online(): React.JSX.Element {
             const selected = (players: player[]) => {
                 let player1 = players[0];
                 let player2 = players[1];
-                
+
+                //@ts-ignore
+                player1.isOnline = player1.isOnline === '1';
+                //@ts-ignore
+                player2.isOnline = player2.isOnline === '1';
+
                 if (player1.name == name) {
                     setplayer1(player1);
                     setplayer2(player2);
@@ -121,11 +132,9 @@ function Online(): React.JSX.Element {
                 }
             }
 
-            const handleDisconnet = (data: player) => {
-                if (data.isOnline == false) {
-                    //@ts-ignore
-                    setplayer2((pre) => ({ ...pre, isOnline: false }));
-                }
+            const handleDisconnect = () => {
+                //@ts-ignore
+                setplayer2((pre) => ({ ...pre, isOnline: false }));
             }
 
             if (import.meta.env.MODE == 'development') {
@@ -138,7 +147,7 @@ function Online(): React.JSX.Element {
                 });
             }
 
-            socket.on("disconnected", handleDisconnet);
+            socket.on("disconnected", handleDisconnect);
 
             socket.on('roomData', roomData);
 
@@ -160,7 +169,7 @@ function Online(): React.JSX.Element {
                 socket?.off('restarted', restarted);
                 socket?.off('connect_error', handleError);
                 socket?.off('roomData', roomData);
-                socket?.off('disconnected', handleDisconnet);
+                socket?.off('disconnected', handleDisconnect);
             }
         }
     }, [socket])

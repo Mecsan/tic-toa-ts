@@ -32,29 +32,34 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.roomAuth = void 0;
+exports.Player = void 0;
 const redis_1 = __importStar(require("../config/redis"));
-function roomAuth(socket, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let userName = socket.handshake.auth.token;
-        let roomName = socket.handshake.auth.room;
-        if (!userName || !roomName) {
-            return next(new Error("Invalid credentials"));
-        }
-        let key = (0, redis_1.roomKey)(roomName);
-        let room = yield redis_1.default.exists(key);
-        if (!room) {
-            return next(new Error("Room not found"));
-        }
-        let playerskey = (0, redis_1.playersKey)(roomName);
-        let players = yield redis_1.default.lrange(playerskey, 0, -1);
-        let hasJoined = players.find(p => p === userName);
-        if (!hasJoined) {
-            return next(new Error("You are not a member of this room"));
-        }
-        socket.data.name = userName;
-        socket.data.room = roomName;
-        next();
-    });
+class Player {
+    constructor(name, choice) {
+        this.name = name;
+        this.choice = choice;
+        this.isOnline = false;
+        this.cn = 0;
+    }
+    static getPlayers(room) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let playerskey = (0, redis_1.playersKey)(room);
+            let ids = yield redis_1.default.lrange(playerskey, 0, -1);
+            return ids;
+        });
+    }
+    static getPlayerChoice(room, player) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let playerkey = (0, redis_1.playerKey)(room, player);
+            let choice = yield redis_1.default.hget(playerkey, "choice");
+            return choice || 'O';
+        });
+    }
+    save(room) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let key = (0, redis_1.playerKey)(room, this.name);
+            yield redis_1.default.hset(key, this);
+        });
+    }
 }
-exports.roomAuth = roomAuth;
+exports.Player = Player;

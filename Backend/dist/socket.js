@@ -44,21 +44,28 @@ function socketSetup(server) {
     io.use(roomAuth_1.roomAuth);
     io.on('connection', (socket) => __awaiter(this, void 0, void 0, function* () {
         console.log("connected " + socket.id);
-        let key = (0, redis_1.Key)("rooms", socket.data.room);
+        let playerkey = (0, redis_1.playerKey)(socket.data.room, socket.data.name);
+        yield redis_1.default.hset(playerkey, "isOnline", 1);
+        yield redis_1.default.hincrby(playerkey, "cn", 1);
+        let key = (0, redis_1.roomKey)(socket.data.room);
         let get = yield redis_1.default.hgetall(key);
-        let room = room_1.Room.parse(get);
-        let player = room.getPlayer(socket.data.name);
-        if (player) {
-            player.cn++;
-            player.isOnline = true;
-        }
-        yield redis_1.default.hset(key, "players", JSON.stringify(room.players));
         yield redis_1.default.expire(key, redis_1.roomExpire);
+        let room = room_1.Room.parse(get);
+        let playerskey = (0, redis_1.playersKey)(socket.data.room);
+        let playersIds = yield redis_1.default.lrange(playerskey, 0, -1);
+        //@ts-ignore
+        let players = yield Promise.all(playersIds.map((playerId) => __awaiter(this, void 0, void 0, function* () {
+            let playerkey = (0, redis_1.playerKey)(room.name, playerId);
+            return redis_1.default.hgetall(playerkey);
+        })));
         socket.join(socket.data.room);
-        socket.emit('roomData', room);
-        socket.broadcast.to(socket.data.room).emit('joined', player);
+        socket.emit('roomData', Object.assign(Object.assign({}, room), { players: players }));
+        socket.broadcast.to(socket.data.room).emit('joined', socket.data.name);
         socket.on('select', (players) => __awaiter(this, void 0, void 0, function* () {
-            yield redis_1.default.hset(key, "players", JSON.stringify(players));
+            for (let player of players) {
+                let key = (0, redis_1.playerKey)(socket.data.room, player.name);
+                yield redis_1.default.hset(key, "choice", player.choice);
+            }
             yield redis_1.default.expire(key, redis_1.roomExpire);
             socket.broadcast.to(socket.data.room).emit('selected', players);
         }));
@@ -79,21 +86,11 @@ function socketSetup(server) {
         }));
         socket.on('disconnect', () => __awaiter(this, void 0, void 0, function* () {
             console.log("disconnected " + socket.id);
-            let get = yield redis_1.default.hget(key, "players");
-            if (get) {
-                let players = JSON.parse(get);
-                let dummy = {
-                    players: players
-                };
-                let player = room.getPlayer.call(dummy, socket.data.name);
-                if (player) {
-                    player.cn--;
-                    if (player.cn == 0) {
-                        player.isOnline = false;
-                        socket.broadcast.to(socket.data.room).emit('disconnected', player);
-                    }
-                    yield redis_1.default.hset(key, "players", JSON.stringify(dummy.players));
-                }
+            yield redis_1.default.hincrby(playerkey, "cn", -1);
+            let cn = yield redis_1.default.hget(playerkey, "cn");
+            if (cn === "0") {
+                yield redis_1.default.hset(playerkey, "isOnline", 0);
+                socket.broadcast.to(socket.data.room).emit('disconnected', socket.data.name);
             }
         }));
     }));

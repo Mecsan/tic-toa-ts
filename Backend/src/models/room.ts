@@ -1,3 +1,6 @@
+import redis, { Key, playerKey, playersKey } from "../config/redis";
+import { Player } from "./player";
+
 export type Choice = 'X' | 'O' | '';
 export type board = [Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice];
 
@@ -5,24 +8,14 @@ export let initBoard: board = ["", "", "", "", "", "", "", "", ""]
 export let initTurn: Choice = 'O'
 
 export type gameStatus = "initial" | "playing" | "finished";
-
-export interface player {
-    name: string,
-    choice: Choice,
-    isOnline: boolean,
-    cn: number
-}
-
 export interface room {
     name: string;
-    players: player[];
     board: board;
     status: gameStatus;
     turn: Choice;
 }
 export class Room implements room {
     name: string;
-    players: player[];
     board: board;
     status: gameStatus;
     turn: Choice;
@@ -30,7 +23,6 @@ export class Room implements room {
 
     constructor(name: string) {
         this.name = name;
-        this.players = [];
         this.board = initBoard;
         this.status = "initial";
         this.turn = initTurn;
@@ -60,22 +52,30 @@ export class Room implements room {
         return ret;
     }
 
-    join(player: string) {
-        let f = this.players.find(p => p.name === player);
-        if (!f) {
-            if (this.players.length >= 2) {
+    async join(player: string) {
+
+        let playerkey = playerKey(this.name, player);
+        let exist = await redis.exists(playerkey);
+
+        if (!exist) {
+            let playerIds: Array<string> = await Player.getPlayers(this.name);
+
+            if (playerIds.length >= 2) {
                 throw new Error("Room is full");
             }
-            if (this.players.length === 0) {
-                this.players.push({ name: player, choice: 'O', isOnline: false, cn: 0 });
+
+            let playerskey = playersKey(this.name);
+            await redis.rpush(playerskey, player);
+
+            if (playerIds.length === 0) {
+                let newPlayer = new Player(player, 'O');
+                await newPlayer.save(this.name);
             } else {
-                this.players.push({ name: player, choice: 'X', isOnline: false, cn: 0 });
+                let oldChoice = await Player.getPlayerChoice(this.name, playerIds[0]);
+                let newPlayer = new Player(player, oldChoice === 'O' ? 'X' : 'O');
+                await newPlayer.save(this.name);
             }
         }
-    }
-
-    getPlayer(name: string) {
-        return this.players.find(p => p.name === name);
     }
 }
 

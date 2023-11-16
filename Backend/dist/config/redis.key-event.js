@@ -31,30 +31,35 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.roomAuth = void 0;
-const redis_1 = __importStar(require("../config/redis"));
-function roomAuth(socket, next) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let userName = socket.handshake.auth.token;
-        let roomName = socket.handshake.auth.room;
-        if (!userName || !roomName) {
-            return next(new Error("Invalid credentials"));
-        }
-        let key = (0, redis_1.roomKey)(roomName);
-        let room = yield redis_1.default.exists(key);
-        if (!room) {
-            return next(new Error("Room not found"));
-        }
+const ioredis_1 = __importDefault(require("ioredis"));
+const redis_1 = __importStar(require("./redis"));
+let url = process.env.REDIS_CONNECT || "";
+let subscriber = new ioredis_1.default(url);
+const EVENTS = {
+    EXPIRED: "__keyevent@0__:expired"
+};
+subscriber.subscribe(EVENTS.EXPIRED, (err, cn) => {
+    if (err) {
+        console.log("faild to subscribe for key expired event", err);
+    }
+});
+subscriber.on('message', (channel, key) => __awaiter(void 0, void 0, void 0, function* () {
+    if (channel === EVENTS.EXPIRED) {
+        let roomName = key.split(":")[2];
+        // remove the players associated with the room;
         let playerskey = (0, redis_1.playersKey)(roomName);
         let players = yield redis_1.default.lrange(playerskey, 0, -1);
-        let hasJoined = players.find(p => p === userName);
-        if (!hasJoined) {
-            return next(new Error("You are not a member of this room"));
-        }
-        socket.data.name = userName;
-        socket.data.room = roomName;
-        next();
-    });
-}
-exports.roomAuth = roomAuth;
+        players.forEach((player) => __awaiter(void 0, void 0, void 0, function* () {
+            let playerkey = (0, redis_1.playerKey)(roomName, player);
+            yield redis_1.default.del(playerkey);
+        }));
+        yield redis_1.default.del(playerskey);
+    }
+}));
+subscriber.on('error', (err) => {
+    console.log("subscriber error : ", err);
+});

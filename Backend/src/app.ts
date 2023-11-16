@@ -4,6 +4,7 @@ import express from 'express';
 import path from 'path';
 import roomRouter from './routes/room';
 import { socketSetup } from './socket';
+import "./config/redis.key-event"
 
 const app = express();
 app.use(express.json());

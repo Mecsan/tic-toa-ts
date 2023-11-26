@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import redis, { roomExpire, roomKey } from "../config/redis";
+import redis, { roomExpire, roomKey } from "../redis/redis";
 import { Room } from "../models/room";
 
 export const createRoom = async (req: Request, res: Response) => {
@@ -15,7 +15,7 @@ export const createRoom = async (req: Request, res: Response) => {
         await redis.hset(key, room.stringify());
         await redis.expire(key, roomExpire);
 
-        await room.join(userName);
+        await Room.addPlayerToRoom(userName, roomName)
 
         res.json({ room: room.name })
     } catch (e: any) {
@@ -33,10 +33,8 @@ export const joinRoom = async (req: Request, res: Response) => {
         if (!exist) {
             throw new Error("Room not found");
         }
-
-        let room = Object.create(Room.prototype);
-        room.name = roomName;
-        await room.join(userName);
+  
+        await Room.addPlayerToRoom(userName, roomName)
         await redis.expire(key, roomExpire);
         
         res.json({ room: roomName })

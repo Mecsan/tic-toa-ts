@@ -1,5 +1,6 @@
-import redis, { Key, playerKey, playersKey } from "../config/redis";
+import redis, { playerKey } from "../redis/redis";
 import { Player } from "./player";
+import { addPlayer, getPlayers } from "./players";
 
 export type Choice = 'X' | 'O' | '';
 export type board = [Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice, Choice];
@@ -19,7 +20,6 @@ export class Room implements room {
     board: board;
     status: gameStatus;
     turn: Choice;
-
 
     constructor(name: string) {
         this.name = name;
@@ -52,29 +52,29 @@ export class Room implements room {
         return ret;
     }
 
-    async join(player: string) {
+    static async addPlayerToRoom(player: string, room: string) {
 
-        let playerkey = playerKey(this.name, player);
+        let playerkey = playerKey(room, player);
         let exist = await redis.exists(playerkey);
 
         if (!exist) {
-            let playerIds: Array<string> = await Player.getPlayers(this.name);
 
+            let playerIds = await getPlayers(room);
             if (playerIds.length >= 2) {
                 throw new Error("Room is full");
             }
 
-            let playerskey = playersKey(this.name);
-            await redis.rpush(playerskey, player);
-
             if (playerIds.length === 0) {
                 let newPlayer = new Player(player, 'O');
-                await newPlayer.save(this.name);
+                await newPlayer.save(room);
             } else {
-                let oldChoice = await Player.getPlayerChoice(this.name, playerIds[0]);
+                let playerkey = playerKey(room, playerIds[0]);
+                let oldChoice = await redis.hget(playerkey, "choice");
                 let newPlayer = new Player(player, oldChoice === 'O' ? 'X' : 'O');
-                await newPlayer.save(this.name);
+                await newPlayer.save(room);
             }
+
+            await addPlayer(room, player);
         }
     }
 }

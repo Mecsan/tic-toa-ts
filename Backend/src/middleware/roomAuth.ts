@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
-import redis, { Key, playerKey, playersKey, roomKey } from "../config/redis";
-import { player } from "../models/player";
+import { getPlayers } from "../models/players";
+import redis, { roomKey } from "../redis/redis";
 
 export async function roomAuth(socket: Socket, next: Function) {
     let userName = socket.handshake.auth.token;
@@ -16,9 +16,8 @@ export async function roomAuth(socket: Socket, next: Function) {
         return next(new Error("Room not found"));
     }
 
-    let playerskey = playersKey(roomName);
-    let players: Array<string> = await redis.lrange(playerskey, 0, -1);
-    
+    let players = await getPlayers(roomName)
+
     let hasJoined = players.find(p => p === userName);
     if (!hasJoined) {
         return next(new Error("You are not a member of this room"));
@@ -27,4 +26,11 @@ export async function roomAuth(socket: Socket, next: Function) {
     socket.data.name = userName;
     socket.data.room = roomName;
     next();
+}
+
+export interface authrizedSocket extends Socket {
+    data: {
+        name: string;
+        room: string;
+    }
 }

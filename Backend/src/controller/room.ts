@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
-import redis, { roomExpire, roomKey } from "../redis/redis";
+import redis from "../redis/redis";
 import { Room } from "../models/room";
+import { roomExpire, roomKey } from "../constant";
 
 export const createRoom = async (req: Request, res: Response) => {
     let { userName, roomName }: { userName: string, roomName: string } = req.body;

@@ -1,8 +1,16 @@
+import { CHANNELS, playerKey, roomExpire, roomKey } from "../constant";
 import { authrizedSocket } from "../middleware/roomAuth";
 import { Player } from "../models/player";
 import { getPlayers } from "../models/players";
 import { board, Choice, initBoard, initTurn, Room } from "../models/room";
-import redis, { playerKey, roomExpire, roomKey } from "../redis/redis";
+import redis from "../redis/redis";
+
+export interface RoomMessage {
+    room: string,
+    event: string,
+    payload: any,
+    socketId: string
+}
 
 export const setupPlayer = async (socket: authrizedSocket) => {
 
@@ -26,7 +34,14 @@ export const setupPlayer = async (socket: authrizedSocket) => {
 
     socket.join(socket.data.room);
     socket.emit('roomData', { ...room, players: players });
-    socket.broadcast.to(socket.data.room).emit('joined', socket.data.name);
+
+    let data: RoomMessage = {
+        room: socket.data.room,
+        event: 'joined',
+        payload: socket.data.name,
+        socketId: socket.id
+    }
+    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const choiceChanged = async (socket: authrizedSocket, players: Player[]) => {
@@ -37,28 +52,56 @@ export const choiceChanged = async (socket: authrizedSocket, players: Player[]) 
         await redis.hset(key, "choice", player.choice);
     }
     await redis.expire(key, roomExpire);
-    socket.broadcast.to(socket.data.room).emit('selected', players);
+
+    let data = {
+        room: socket.data.room,
+        event: 'selected',
+        payload: players,
+        socketId: socket.id
+    }
+    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const playGame = async (socket: authrizedSocket, { board, turn }: { board: board, turn: Choice }) => {
     let key = roomKey(socket.data.room);
     await redis.hset(key, "board", JSON.stringify(board), "turn", turn);
     await redis.expire(key, roomExpire);
-    socket.broadcast.to(socket.data.room).emit('moved', { board, turn })
+
+    let data = {
+        room: socket.data.room,
+        event: 'moved',
+        payload: { board, turn },
+        socketId: socket.id
+    }
+    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const startGame = async (socket: authrizedSocket) => {
     let key = roomKey(socket.data.room);
     await redis.hset(key, "status", "playing");
     await redis.expire(key, roomExpire);
-    socket.broadcast.to(socket.data.room).emit('started');
+
+    let data = {
+        room: socket.data.room,
+        event: 'started',
+        payload: null,
+        socketId: socket.id
+    }
+    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const restartGame = async (socket: authrizedSocket) => {
     let key = roomKey(socket.data.room);
     await redis.hset(key, "status", "initial", "board", JSON.stringify(initBoard), "turn", initTurn);
     await redis.expire(key, roomExpire);
-    socket.broadcast.to(socket.data.room).emit('restarted');
+
+    let data = {
+        room: socket.data.room,
+        event: 'restarted',
+        payload: null,
+        socketId: socket.id
+    }
+    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 
@@ -72,6 +115,13 @@ export const disconnectPlayer = async (socket: authrizedSocket) => {
 
     if (cn === "0") {
         await redis.hset(playerkey, "isOnline", 0);
-        socket.broadcast.to(socket.data.room).emit('disconnected', socket.data.name);
+        let data = {
+            room: socket.data.room,
+            event: 'disconnected',
+            payload: socket.data.name,
+            socketId: socket.id
+        }
+
+        redis.publish(CHANNELS.ROOM, JSON.stringify(data));
     }
 }

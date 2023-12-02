@@ -4,7 +4,7 @@ import { authrizedSocket, roomAuth } from './middleware/roomAuth';
 import { choiceChanged, disconnectPlayer, playGame, restartGame, setupPlayer, startGame } from './controller/socket';
 
 
-export function socketSetup(server: Server) {
+export function socketSetup(server: Server): SocketServer {
     
     const io = new SocketServer(server, {
         transports: ['websocket']
@@ -27,4 +27,6 @@ export function socketSetup(server: Server) {
 
         socket.on('disconnect', () => disconnectPlayer(socket))
     })
+
+    return io;
 }

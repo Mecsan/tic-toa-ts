@@ -1,4 +1,5 @@
-import redis, { playersKey } from "../redis/redis";
+import { playersKey } from "../constant";
+import redis from "../redis/redis";
 
 export type Players = string[]
 

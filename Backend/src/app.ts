@@ -3,8 +3,11 @@ config();
 import express from 'express';
 import path from 'path';
 import roomRouter from './routes/room';
+// import "./redis/redis.key-event"
 import { socketSetup } from './socket';
-import "./redis/redis.key-event"
+import { Server as SocketServer } from 'socket.io';
+import "./redis/subscribers"
+
 
 const app = express();
 app.use(express.json());
@@ -21,8 +24,11 @@ if (process.env.NODE_ENV == 'production') {
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
-    console.log("server running on http://localhost:" + port)
+    console.log(`server running process:${process.pid} on http://localhost:${port}`)
 })
 
-socketSetup(server);
+const io: SocketServer = socketSetup(server);
+
+export default io;
+
 

@@ -1,4 +1,5 @@
-import redis, { playerKey, playersKey } from "../redis/redis";
+import { playerKey } from "../constant";
+import redis from "../redis/redis";
 import { Choice } from "./room"
 
 export interface player {

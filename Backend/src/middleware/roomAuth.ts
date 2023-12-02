@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
+import { roomKey } from "../constant";
 import { getPlayers } from "../models/players";
-import redis, { roomKey } from "../redis/redis";
+import redis from "../redis/redis";
 
 export async function roomAuth(socket: Socket, next: Function) {
     let userName = socket.handshake.auth.token;

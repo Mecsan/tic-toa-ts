@@ -1,4 +1,5 @@
-import redis, { playerKey } from "../redis/redis";
+import { playerKey } from "../constant";
+import redis from "../redis/redis";
 import { Player } from "./player";
 import { addPlayer, getPlayers } from "./players";
 

@@ -94,13 +94,17 @@ function Online(): React.JSX.Element {
             }
 
             const selected = (players: player[]) => {
-                let player1 = players[0];
-                let player2 = players[1];
+                let player1 = players[0] || null;
+                let player2 = players[1] || null;
 
-                //@ts-ignore
-                player1.isOnline = player1.isOnline === '1';
-                //@ts-ignore
-                player2.isOnline = player2.isOnline === '1';
+                if (player1) {
+                    //@ts-ignore
+                    player1.isOnline = player1?.isOnline === '1';
+                }
+                if (player2) {
+                   //@ts-ignore
+                    player2.isOnline = player2?.isOnline === '1';
+                }
 
                 if (player1.name == name) {
                     setplayer1(player1);
@@ -188,10 +192,15 @@ function Online(): React.JSX.Element {
             p2 = { ...player2, choice: value } as player;
             p1 = { ...player1, choice: value == 'O' ? 'X' : 'O' } as player;
         }
-
+        console.log(player1, p1, player2, p2)
         setplayer1(p1);
         if (player2) setplayer2(p2);
 
+        // for redis compatibility
+        //@ts-ignore
+        p1.isOnline = p1.isOnline ? '1' : '0';
+        //@ts-ignore
+        p2.isOnline = p2.isOnline ? '1' : '0';
         socket?.emit('select', player2 ? [p1, p2] : [p1])
     }
 

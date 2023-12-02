@@ -19,7 +19,7 @@ class PubSub {
         });
     }
     publish(channel, message) {
-        console.log("publishing from " + process.pid);
+        // console.log("publishing from " + process.pid)
         this.pubClient.publish(channel, message);
     }
     onMessage(cb) {

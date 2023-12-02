@@ -100,7 +100,7 @@ const restartGame = (socket) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.restartGame = restartGame;
 const disconnectPlayer = (socket) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("disconnected " + socket.id);
+    // console.log("disconnected " + socket.id);
     let playerkey = (0, constant_1.playerKey)(socket.data.room, socket.data.name);
     yield redis_1.default.hincrby(playerkey, "cn", -1);
     let cn = yield redis_1.default.hget(playerkey, "cn");

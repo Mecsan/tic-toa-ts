@@ -109,7 +109,7 @@ export const restartGame = async (socket: authrizedSocket) => {
 
 
 export const disconnectPlayer = async (socket: authrizedSocket) => {
-    console.log("disconnected " + socket.id);
+    // console.log("disconnected " + socket.id);
 
     let playerkey = playerKey(socket.data.room, socket.data.name);
 

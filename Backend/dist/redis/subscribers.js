@@ -53,7 +53,7 @@ function handleRoom(data) {
         try {
             let message = JSON.parse(data);
             let roomSockets = yield server_1.default.in(message.room).fetchSockets();
-            console.log("emitting from" + process.pid);
+            // console.log("emitting from" + process.pid)
             // send data to all sockets in the room except the sender
             for (let socket of roomSockets) {
                 if (socket.id == message.socketId)

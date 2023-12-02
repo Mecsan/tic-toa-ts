@@ -19,7 +19,7 @@ function socketSetup(server) {
     });
     io.use(roomAuth_1.roomAuth);
     io.on('connection', (socket) => __awaiter(this, void 0, void 0, function* () {
-        console.log("connected " + socket.id);
+        // console.log("connected " + socket.id);
         yield (0, socket_1.setupPlayer)(socket);
         socket.on('select', (players) => (0, socket_1.choiceChanged)(socket, players));
         socket.on('move', (data) => (0, socket_1.playGame)(socket, data));

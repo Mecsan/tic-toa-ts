@@ -46,7 +46,7 @@ async function handleRoom(data: string) {
         let message: RoomMessage = JSON.parse(data);
         let roomSockets = await io.in(message.room).fetchSockets();
 
-        console.log("emitting from" + process.pid)
+        // console.log("emitting from" + process.pid)
 
         // send data to all sockets in the room except the sender
         for (let socket of roomSockets) {

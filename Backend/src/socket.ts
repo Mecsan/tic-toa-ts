@@ -13,7 +13,7 @@ export function socketSetup(server: Server): SocketServer {
     io.use(roomAuth);
 
     io.on('connection', async (socket: authrizedSocket) => {
-        console.log("connected " + socket.id);
+        // console.log("connected " + socket.id);
 
         await setupPlayer(socket);
 

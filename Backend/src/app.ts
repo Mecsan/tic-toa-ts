@@ -1,34 +1,22 @@
-import { config } from 'dotenv';
-config();
-import express from 'express';
-import path from 'path';
-import roomRouter from './routes/room';
-// import "./redis/redis.key-event"
-import { socketSetup } from './socket';
-import { Server as SocketServer } from 'socket.io';
-import "./redis/subscribers"
+import cluster from "node:cluster";
+import os from 'node:os';
 
+let cpus = os.cpus().length;
 
-const app = express();
-app.use(express.json());
+function setupPrimary() {
+    for (let i = 0; i < cpus; i++) {
+        cluster.fork();
+    }
 
-app.use("/api/room", roomRouter);
-
-if (process.env.NODE_ENV == 'production') {
-    let staticPath = path.join(__dirname, '..', '..', 'Frontend', 'dist');
-    app.use(express.static(staticPath));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(staticPath, 'index.html'));
-    })
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`Worker ${worker.process.pid} died`);
+        // When any worker dies, restart it.
+        cluster.fork();
+    });
 }
 
-const port = process.env.PORT || 3000;
-const server = app.listen(port, () => {
-    console.log(`server running process:${process.pid} on http://localhost:${port}`)
-})
-
-const io: SocketServer = socketSetup(server);
-
-export default io;
-
-
+if (cluster.isPrimary) {
+    setupPrimary();
+} else {
+    import("./server");
+}

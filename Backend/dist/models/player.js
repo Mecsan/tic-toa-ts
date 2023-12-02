@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,9 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
-const redis_1 = __importStar(require("../config/redis"));
+const constant_1 = require("../constant");
+const redis_1 = __importDefault(require("../redis/redis"));
 class Player {
     constructor(name, choice) {
         this.name = name;
@@ -41,23 +22,9 @@ class Player {
         this.isOnline = false;
         this.cn = 0;
     }
-    static getPlayers(room) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let playerskey = (0, redis_1.playersKey)(room);
-            let ids = yield redis_1.default.lrange(playerskey, 0, -1);
-            return ids;
-        });
-    }
-    static getPlayerChoice(room, player) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let playerkey = (0, redis_1.playerKey)(room, player);
-            let choice = yield redis_1.default.hget(playerkey, "choice");
-            return choice || 'O';
-        });
-    }
     save(room) {
         return __awaiter(this, void 0, void 0, function* () {
-            let key = (0, redis_1.playerKey)(room, this.name);
+            let key = (0, constant_1.playerKey)(room, this.name);
             yield redis_1.default.hset(key, this);
         });
     }

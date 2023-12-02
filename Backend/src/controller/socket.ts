@@ -3,6 +3,7 @@ import { authrizedSocket } from "../middleware/roomAuth";
 import { Player } from "../models/player";
 import { getPlayers } from "../models/players";
 import { board, Choice, initBoard, initTurn, Room } from "../models/room";
+import pubSub from "../redis/pubsub";
 import redis from "../redis/redis";
 
 export interface RoomMessage {
@@ -33,6 +34,8 @@ export const setupPlayer = async (socket: authrizedSocket) => {
     }))
 
     socket.join(socket.data.room);
+
+    //TODO convert this ws request into a simple REST request
     socket.emit('roomData', { ...room, players: players });
 
     let data: RoomMessage = {
@@ -41,7 +44,7 @@ export const setupPlayer = async (socket: authrizedSocket) => {
         payload: socket.data.name,
         socketId: socket.id
     }
-    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+    pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const choiceChanged = async (socket: authrizedSocket, players: Player[]) => {
@@ -59,7 +62,7 @@ export const choiceChanged = async (socket: authrizedSocket, players: Player[]) 
         payload: players,
         socketId: socket.id
     }
-    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+    pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const playGame = async (socket: authrizedSocket, { board, turn }: { board: board, turn: Choice }) => {
@@ -73,7 +76,7 @@ export const playGame = async (socket: authrizedSocket, { board, turn }: { board
         payload: { board, turn },
         socketId: socket.id
     }
-    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+    pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const startGame = async (socket: authrizedSocket) => {
@@ -87,7 +90,7 @@ export const startGame = async (socket: authrizedSocket) => {
         payload: null,
         socketId: socket.id
     }
-    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+    pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 export const restartGame = async (socket: authrizedSocket) => {
@@ -101,7 +104,7 @@ export const restartGame = async (socket: authrizedSocket) => {
         payload: null,
         socketId: socket.id
     }
-    redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+    pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
 }
 
 
@@ -122,6 +125,6 @@ export const disconnectPlayer = async (socket: authrizedSocket) => {
             socketId: socket.id
         }
 
-        redis.publish(CHANNELS.ROOM, JSON.stringify(data));
+        pubSub.publish(CHANNELS.ROOM, JSON.stringify(data));
     }
 }

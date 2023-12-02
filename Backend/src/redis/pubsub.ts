@@ -21,6 +21,7 @@ class PubSub {
     }
 
     publish(channel: string, message: string | Buffer) {
+        console.log("publishing from " + process.pid)
         this.pubClient.publish(channel, message);
     }
 

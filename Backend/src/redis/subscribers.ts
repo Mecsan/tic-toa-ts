@@ -1,6 +1,6 @@
-import io from "../app";
 import { CHANNELS, playerKey, playersKey } from "../constant";
 import { RoomMessage } from "../controller/socket";
+import io from "../server";
 import pubSub from "./pubsub";
 import redis from "./redis";
 
@@ -45,6 +45,8 @@ async function handleRoom(data: string) {
     try {
         let message: RoomMessage = JSON.parse(data);
         let roomSockets = await io.in(message.room).fetchSockets();
+
+        console.log("emitting from" + process.pid)
 
         // send data to all sockets in the room except the sender
         for (let socket of roomSockets) {

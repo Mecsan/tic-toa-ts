@@ -38,7 +38,7 @@ export const joinRoom = async (req: Request, res: Response) => {
         await Room.addPlayerToRoom(userName, roomName)
         await redis.expire(key, roomExpire);
         
-        res.json({ room: roomName })
+        res.json({ room: roomName });
     } catch (e: any) {
         console.log(e)
         res.status(400).json({ error: e.message });

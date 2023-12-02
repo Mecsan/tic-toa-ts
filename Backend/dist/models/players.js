@@ -12,30 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.roomAuth = void 0;
+exports.addPlayer = exports.getPlayers = void 0;
 const constant_1 = require("../constant");
-const players_1 = require("../models/players");
 const redis_1 = __importDefault(require("../redis/redis"));
-function roomAuth(socket, next) {
+function getPlayers(room) {
     return __awaiter(this, void 0, void 0, function* () {
-        let userName = socket.handshake.auth.token;
-        let roomName = socket.handshake.auth.room;
-        if (!userName || !roomName) {
-            return next(new Error("Invalid credentials"));
-        }
-        let key = (0, constant_1.roomKey)(roomName);
-        let room = yield redis_1.default.exists(key);
-        if (!room) {
-            return next(new Error("Room not found"));
-        }
-        let players = yield (0, players_1.getPlayers)(roomName);
-        let hasJoined = players.find(p => p === userName);
-        if (!hasJoined) {
-            return next(new Error("You are not a member of this room"));
-        }
-        socket.data.name = userName;
-        socket.data.room = roomName;
-        next();
+        let playerskey = (0, constant_1.playersKey)(room);
+        let ids = yield redis_1.default.lrange(playerskey, 0, -1);
+        return ids;
     });
 }
-exports.roomAuth = roomAuth;
+exports.getPlayers = getPlayers;
+function addPlayer(room, player) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let playerskey = (0, constant_1.playersKey)(room);
+        yield redis_1.default.rpush(playerskey, player);
+    });
+}
+exports.addPlayer = addPlayer;
